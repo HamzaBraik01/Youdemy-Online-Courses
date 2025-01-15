@@ -33,6 +33,13 @@
                     Favoris
                 </a>
             </nav>
+            <!-- Déconnexion -->
+            <div class="p-5 border-t border-blue-500">
+                <a href="#" class="flex items-center px-6 py-3 text-blue-100 hover:bg-blue-700">
+                    <i data-feather="log-out" class="mr-3"></i>
+                    Déconnexion
+                </a>
+            </div>
         </div>
 
         <!-- Main Content -->

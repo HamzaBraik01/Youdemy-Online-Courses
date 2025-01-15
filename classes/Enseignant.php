@@ -8,6 +8,8 @@ class Enseignant extends Utilisateur {
     }
 
     public function register(): void {
+        // Enregistrer l'utilisateur dans la base de données
+        $this->save();
         echo "Teacher {$this->nom} registered.\n";
     }
 
@@ -19,13 +21,20 @@ class Enseignant extends Utilisateur {
     }
 
     public function modifierCours(): void {
-        
     }
 
     public function supprimerCours(): void {
     }
 
     public function consulterStatistiques(): void {
+    }
+
+    public function seConnecter(): void {
+        echo "Teacher {$this->nom} connected.\n";
+    }
+
+    public function seDeconnecter(): void {
+        echo "Teacher {$this->nom} disconnected.\n";
     }
 }
 ?>

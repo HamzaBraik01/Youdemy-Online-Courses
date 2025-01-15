@@ -37,6 +37,13 @@
                     Statistiques
                 </a>
             </nav>
+            <!-- Déconnexion -->
+            <div class="p-5 border-t border-gray-700">
+                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                    <i data-feather="log-out" class="mr-3"></i>
+                    Déconnexion
+                </a>
+            </div>
         </div>
 
         <!-- Main Content -->

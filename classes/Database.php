@@ -17,15 +17,14 @@ class Database {
     // Method to get the singleton instance of the database
     public static function getInstance($dsn = null, $username = null, $password = null) {
         if (self::$instance === null) {
-            $dsn = $dsn ?? 'mysql:host=localhost;dbname=Youdemy'; // Replace with your database name
-            $username = $username ?? 'root'; // Use 'root' as the default username
-            $password = $password ?? ''; // Use an empty string or your root password if set
+            $dsn = $dsn ?? 'mysql:host=localhost;dbname=Youdemy'; 
+            $username = $username ?? 'root'; 
+            $password = $password ?? ''; 
             self::$instance = new Database($dsn, $username, $password);
         }
         return self::$instance;
     }
 
-    // Method to get the PDO connection
     public function getConnection() {
         return $this->pdo;
     }
