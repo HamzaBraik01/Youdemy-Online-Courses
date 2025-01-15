@@ -26,7 +26,7 @@
                 </a>
 
                 <div class="flex items-center space-x-6">
-                    <a href="courses.html" class="text-white font-medium transition-colors">
+                    <a href="course.php" class="text-white font-medium transition-colors">
                         Courses
                     </a>
                     <a href="login.php" class="text-gray-300 hover:text-white font-medium transition-colors">
