@@ -1,5 +1,7 @@
+-- Création de la base de données
 CREATE DATABASE Youdemy;
 
+-- Utilisation de la base de données
 USE Youdemy;
 
 -- Table: Role
@@ -15,7 +17,8 @@ CREATE TABLE Utilisateur (
     email VARCHAR(150) UNIQUE NOT NULL,
     motDePasse VARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
-    FOREIGN KEY (role_id) REFERENCES Role(id)
+    status ENUM('active', 'suspendu', 'en attente') DEFAULT 'active',
+    FOREIGN KEY (role_id) REFERENCES Role(id) ON DELETE CASCADE
 );
 
 -- Table: Categorie
@@ -37,8 +40,9 @@ CREATE TABLE Cours (
     description TEXT,
     contenu TEXT,
     image VARCHAR(255),
+    status TINYINT(1) DEFAULT 1,
     categorie_id INT NOT NULL,
-    FOREIGN KEY (categorie_id) REFERENCES Categorie(id)
+    FOREIGN KEY (categorie_id) REFERENCES Categorie(id) ON DELETE CASCADE
 );
 
 -- Table: Enseignant_Cours
@@ -47,8 +51,8 @@ CREATE TABLE Enseignant_Cours (
     id_cours INT NOT NULL,
     date_inscription TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_enseignant, id_cours),
-    FOREIGN KEY (id_enseignant) REFERENCES Utilisateur(id),
-    FOREIGN KEY (id_cours) REFERENCES Cours(id)
+    FOREIGN KEY (id_enseignant) REFERENCES Utilisateur(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_cours) REFERENCES Cours(id) ON DELETE CASCADE
 );
 
 -- Table: Course_Tag
@@ -56,8 +60,8 @@ CREATE TABLE Course_Tag (
     id_tag INT NOT NULL,
     id_cours INT NOT NULL,
     PRIMARY KEY (id_tag, id_cours),
-    FOREIGN KEY (id_tag) REFERENCES Tag(id),
-    FOREIGN KEY (id_cours) REFERENCES Cours(id)
+    FOREIGN KEY (id_tag) REFERENCES Tag(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_cours) REFERENCES Cours(id) ON DELETE CASCADE
 );
 
 -- Table: Content
@@ -66,21 +70,21 @@ CREATE TABLE Content (
     titre VARCHAR(200) NOT NULL,
     description TEXT,
     categorie_id INT,
-    FOREIGN KEY (categorie_id) REFERENCES Categorie(id)
+    FOREIGN KEY (categorie_id) REFERENCES Categorie(id) ON DELETE CASCADE
 );
 
--- Table: Video ()
+-- Table: Video
 CREATE TABLE Video (
     content_id INT PRIMARY KEY,
     url VARCHAR(255) NOT NULL,
-    FOREIGN KEY (content_id) REFERENCES Content(id)
+    FOREIGN KEY (content_id) REFERENCES Content(id) ON DELETE CASCADE
 );
 
--- Table: Context ()
+-- Table: Context
 CREATE TABLE Context (
     content_id INT PRIMARY KEY,
     objectif TEXT NOT NULL,
-    FOREIGN KEY (content_id) REFERENCES Content(id)
+    FOREIGN KEY (content_id) REFERENCES Content(id) ON DELETE CASCADE
 );
 
 -- Table: Student_Courses
@@ -88,6 +92,16 @@ CREATE TABLE Student_Courses (
     id_etudiant INT NOT NULL,
     id_cours INT NOT NULL,
     PRIMARY KEY (id_etudiant, id_cours),
-    FOREIGN KEY (id_etudiant) REFERENCES Utilisateur(id),
-    FOREIGN KEY (id_cours) REFERENCES Cours(id)
+    FOREIGN KEY (id_etudiant) REFERENCES Utilisateur(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_cours) REFERENCES Cours(id) ON DELETE CASCADE
 );
+
+-- Insertion des rôles par défaut
+INSERT INTO Role (role) VALUES 
+    ('Administrateur'), 
+    ('Enseignant'), 
+    ('Etudiant');
+
+-- Insertion d'un utilisateur administrateur par défaut
+INSERT INTO Utilisateur (nom, email, motDePasse, role_id) VALUES 
+    ('Admin', 'admin@admin.com', '$2y$10$n2efksBeVtKlfWbSNLKKfeLNELB3VoTPsaw72boNC3xmHFxxC8GT2', 1);

@@ -1,3 +1,14 @@
+<?php
+session_start();
+require_once '../../classes/Enseignant.php';
+
+if (!isset($_SESSION['utilisateur']) || !$_SESSION['utilisateur'] instanceof Enseignant) {
+    header('Location: ../../public/login.php');
+    exit();
+}
+
+// Afficher le contenu du tableau de bord des enseignants
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>

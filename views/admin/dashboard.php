@@ -1,9 +1,17 @@
+<?php
+session_start();
+require_once '../../classes/Database.php';
+require_once '../../classes/Administrateur.php';
+require_once '../../classes/Role.php';
+
+
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Administrateur</title>
+    <title>Dashboard Administrateur - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.1/feather.min.js"></script>
@@ -16,30 +24,30 @@
                 <h2 class="text-2xl font-bold">Youdemy</h2>
             </div>
             <nav class="flex-1">
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="dashboard.php" class="flex items-center px-6 py-3 text-gray-300 bg-gray-700">
+                    <i data-feather="bar-chart-2" class="mr-3"></i>
+                    Statistiques
+                </a>
+                <a href="validation.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="users" class="mr-3"></i>
                     Validation Comptes
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="users.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="user-check" class="mr-3"></i>
                     Gestion Utilisateurs
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="content.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="book" class="mr-3"></i>
                     Gestion Contenus
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="tags.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="tag" class="mr-3"></i>
                     Gestion Tags
-                </a>
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
-                    <i data-feather="bar-chart-2" class="mr-3"></i>
-                    Statistiques
                 </a>
             </nav>
             <!-- Déconnexion -->
             <div class="p-5 border-t border-gray-700">
-                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="../../controllers/logout.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="log-out" class="mr-3"></i>
                     Déconnexion
                 </a>
@@ -49,8 +57,11 @@
         <!-- Main Content -->
         <div class="flex-1 overflow-auto">
             <header class="bg-white shadow">
-                <div class="px-6 py-4">
+                <div class="px-6 py-4 flex justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800">Tableau de Bord</h1>
+                    <div class="text-gray-600">
+                        Bienvenue, <?php echo htmlspecialchars($_SESSION['user']['nom']); ?>
+                    </div>
                 </div>
             </header>
 
@@ -64,7 +75,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-gray-500 text-sm">Total Cours</h3>
-                                <p class="text-2xl font-semibold">156</p>
+                                <p class="text-2xl font-semibold"><?php echo $statistiques['totalCours']; ?></p>
                             </div>
                         </div>
                     </div>
@@ -76,7 +87,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-gray-500 text-sm">Total Étudiants</h3>
-                                <p class="text-2xl font-semibold">2,450</p>
+                                <p class="text-2xl font-semibold"><?php echo $statistiques['totalEtudiants']; ?></p>
                             </div>
                         </div>
                     </div>
@@ -88,7 +99,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-gray-500 text-sm">Enseignants</h3>
-                                <p class="text-2xl font-semibold">45</p>
+                                <p class="text-2xl font-semibold"><?php echo $statistiques['totalEnseignants']; ?></p>
                             </div>
                         </div>
                     </div>
@@ -100,7 +111,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-gray-500 text-sm">Total Tags</h3>
-                                <p class="text-2xl font-semibold">89</p>
+                                <p class="text-2xl font-semibold"><?php echo $statistiques['totalTags']; ?></p>
                             </div>
                         </div>
                     </div>
@@ -115,37 +126,19 @@
 
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold mb-4">Top 3 Enseignants</h3>
-                        <div class="space-y-4">
+                        <div class="space-y-4" id="topTeachersContainer">
+                            <?php foreach ($statistiques['topEnseignants'] as $index => $enseignant): ?>
                             <div class="flex items-center">
-                                <img src="/api/placeholder/40/40" alt="Teacher 1" class="rounded-full">
+                                <img src="/api/placeholder/40/40" alt="Teacher <?php echo $index + 1; ?>" class="rounded-full">
                                 <div class="ml-4 flex-1">
-                                    <h4 class="font-semibold">Dr. Sophie Martin</h4>
+                                    <h4 class="font-semibold"><?php echo htmlspecialchars($enseignant['nom']); ?></h4>
                                     <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 95%"></div>
+                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: <?php echo ($enseignant['total_cours'] / $statistiques['totalCours'] * 100); ?>%"></div>
                                     </div>
                                 </div>
-                                <span class="ml-4 text-sm font-semibold">28 cours</span>
+                                <span class="ml-4 text-sm font-semibold"><?php echo $enseignant['total_cours']; ?> cours</span>
                             </div>
-                            <div class="flex items-center">
-                                <img src="/api/placeholder/40/40" alt="Teacher 2" class="rounded-full">
-                                <div class="ml-4 flex-1">
-                                    <h4 class="font-semibold">Prof. Thomas Bernard</h4>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 85%"></div>
-                                    </div>
-                                </div>
-                                <span class="ml-4 text-sm font-semibold">24 cours</span>
-                            </div>
-                            <div class="flex items-center">
-                                <img src="/api/placeholder/40/40" alt="Teacher 3" class="rounded-full">
-                                <div class="ml-4 flex-1">
-                                    <h4 class="font-semibold">Dr. Marie Dubois</h4>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 75%"></div>
-                                    </div>
-                                </div>
-                                <span class="ml-4 text-sm font-semibold">20 cours</span>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -167,33 +160,19 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">JavaScript Avancé</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Dr. Sophie Martin</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">245</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Programmation</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Actif</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">Machine Learning</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Prof. Thomas Bernard</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">198</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Data Science</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Actif</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">Design UX/UI</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Dr. Marie Dubois</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">167</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">Design</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">En révision</span>
-                                    </td>
-                                </tr>
+                                <?php foreach ($statistiques['repartitionCours'] as $cours): ?>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cours['name']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cours['enseignant']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><?php echo $cours['total']; ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cours['categorie']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $cours['status'] === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>">
+                                                <?php echo htmlspecialchars($cours['status']); ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -206,14 +185,15 @@
         // Initialize Feather Icons
         feather.replace();
 
-        // Initialize Charts
+        // Initialize Charts with dynamic data
+        const categoryData = <?php echo json_encode($statistiques['repartitionCours']); ?>;
         const ctx = document.getElementById('categoryChart').getContext('2d');
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Programmation', 'Data Science', 'Design', 'Marketing', 'Business'],
+                labels: categoryData.map(item => item.name),
                 datasets: [{
-                    data: [30, 25, 20, 15, 10],
+                    data: categoryData.map(item => item.total),
                     backgroundColor: [
                         '#3B82F6',
                         '#10B981',

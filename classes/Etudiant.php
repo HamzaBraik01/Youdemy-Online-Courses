@@ -1,9 +1,15 @@
 <?php
+require_once 'Database.php';
+require_once 'Utilisateur.php';
 class Etudiant extends Utilisateur {
+
+    public function __construct(string $nom, string $email, string $motDePasse, Role $role, string $status = 'active') {
+        parent::__construct($nom, $email, $motDePasse, $role, $status);
+    }
+
     public function register(): void {
-        // Enregistrer l'utilisateur dans la base de données
         $this->save();
-        echo "Student {$this->nom} registered.\n";
+        //echo "Student {$this->nom} registered.\n";
     }
 
     public function listeCoursInscrits(): array {
@@ -17,12 +23,6 @@ class Etudiant extends Utilisateur {
         return [];
     }
 
-    public function seConnecter(): void {
-        echo "Student {$this->nom} connected.\n";
-    }
-
-    public function seDeconnecter(): void {
-        echo "Student {$this->nom} disconnected.\n";
-    }
+    
 }
 ?>

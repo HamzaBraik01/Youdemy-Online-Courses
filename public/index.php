@@ -16,7 +16,7 @@
     <nav class="bg-gray-900 border-b border-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-20">
-                <a href="/" class="flex items-center space-x-3">
+                <a href="index.php" class="flex items-center space-x-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>

@@ -1,61 +1,61 @@
 <?php
-session_start(); 
-require_once '../classes/Database.php'; 
-require_once '../classes/Utilisateur.php'; 
-require_once '../classes/Administrateur.php'; 
-require_once '../classes/Enseignant.php'; 
-require_once '../classes/Etudiant.php'; 
-require_once '../classes/Role.php'; 
-
+session_start();
+require_once '../classes/Database.php';
+require_once '../classes/Utilisateur.php';
+require_once '../classes/Administrateur.php';
+require_once '../classes/Enseignant.php';
+require_once '../classes/Etudiant.php';
+require_once '../classes/Role.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nom = htmlspecialchars($_POST['name']);
-    $email = htmlspecialchars($_POST['email']);
-    $password = $_POST['password'];
-    $role = $_POST['role']; 
+    $nom = htmlspecialchars(trim($_POST['name']));
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+    $password = trim($_POST['password']);
+    $roleStr = $_POST['role'];
 
-    try {
-        $db = Database::getInstance()->getConnection();
+    $db = Database::getInstance()->getConnection();
+    $stmt = $db->prepare("SELECT COUNT(*) FROM Utilisateur WHERE email = ?");
+    $stmt->execute([$email]);
+    $count = $stmt->fetchColumn();
 
-        // Vérifier si l'email est déjà utilisé
-        $stmt = $db->prepare("SELECT id FROM Utilisateur WHERE email = :email");
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-        if ($stmt->fetch()) {
-            throw new Exception("Cet email est déjà utilisé.");
+    if ($count > 0) {
+        // Email already exists
+        echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: 'Cet email est déjà utilisé. Veuillez utiliser un autre email.',
+                    });
+                });
+            </script>";
+    } else {
+        $roleId = ($roleStr === 'Enseignant') ? 2 : 3; 
+        $role = new Role($roleId, $roleStr);
+
+        if ($roleStr === 'Enseignant') {
+            $user = new Enseignant($nom, $email, $password, $role, 'en attente');
+        } else {
+            $user = new Etudiant($nom, $email, $password, $role, 'active');
         }
 
-        $roleStmt = $db->prepare("SELECT id FROM Role WHERE role = :role");
-        $roleStmt->bindParam(':role', $role);
-        $roleStmt->execute();
-        $roleId = $roleStmt->fetchColumn();
+        $user->register();
 
-        if (!$roleId) {
-            throw new Exception("Rôle non trouvé.");
-        }
-
-        switch ($role) {
-            case 'Etudiant':
-                $utilisateur = new Etudiant(0, $nom, $email, $password, new Role($roleId, $role));
-                break;
-            case 'Enseignant':
-                $utilisateur = new Enseignant(0, $nom, $email, $password, new Role($roleId, $role), 0); // 0 pour "approve"
-                break;
-            default:
-                throw new Exception("Rôle non reconnu.");
-        }
-
-        $utilisateur->register();
-
-        header('Location: login.php');
-        exit();
-    } catch (Exception $e) {
-        $_SESSION['error'] = $e->getMessage();
-        header('Location: register.php');
-        exit();
+        echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: 'Votre compte a été créé avec succès !',
+                    }).then(() => {
+                        window.location.href = 'login.php'; 
+                    });
+                });
+            </script>"; 
     }
 }
 ?>
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Register - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
         font-family: 'Inter', sans-serif;
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <nav class="bg-gray-900 border-b border-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-20">
-                <a href="/" class="flex items-center space-x-3">
+                <a href="index.php" class="flex items-center space-x-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
@@ -86,23 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
 
     <main class="flex-grow container mx-auto px-4 py-12">
-            <?php
-        if (isset($_SESSION['error'])) {
-            echo "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>{$_SESSION['error']}</div>";
-            unset($_SESSION['error']);
-        }
-        if (isset($_SESSION['success'])) {
-            echo "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4'>{$_SESSION['success']}</div>";
-            unset($_SESSION['success']);
-        }
-        ?>
         <div class="max-w-md mx-auto">
             <div class="bg-white p-8 rounded-2xl shadow-lg">
                 <div class="text-center mb-8">
                     <h2 class="text-3xl font-bold text-gray-900">Create an account</h2>
                     <p class="text-gray-600 mt-2">Join our community of learners and educators</p>
                 </div>
-                <form class="space-y-6" action="" method="POST">
+                <form class="space-y-6" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="POST">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">
                         Full Name

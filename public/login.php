@@ -1,66 +1,58 @@
 <?php
 session_start();
-require_once '../classes/Database.php'; 
-require_once '../classes/Utilisateur.php'; 
-require_once '../classes/Administrateur.php'; 
-require_once '../classes/Enseignant.php'; 
-require_once '../classes/Etudiant.php'; 
-require_once '../classes/Role.php'; 
+require_once '../classes/Database.php';
+require_once '../classes/Utilisateur.php';
+require_once '../classes/Administrateur.php';
+require_once '../classes/Enseignant.php';
+require_once '../classes/Etudiant.php';
+require_once '../classes/Role.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Récupérer les données du formulaire
-    $email = htmlspecialchars($_POST['email']);
-    $password = $_POST['password'];
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+    $password = trim($_POST['password']);
 
-    try {
-        $db = Database::getInstance()->getConnection();
+    // Récupérer l'utilisateur depuis la base de données
+    $db = Database::getInstance()->getConnection();
+    $stmt = $db->prepare("
+        SELECT u.id, u.nom, u.email, u.motDePasse, u.status, r.id AS role_id, r.role 
+        FROM Utilisateur u 
+        INNER JOIN Role r ON u.role_id = r.id 
+        WHERE u.email = ?
+    ");
+    $stmt->execute([$email]);
+    $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $db->prepare("SELECT * FROM Utilisateur WHERE email = :email");
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($userData && password_verify($password, $userData['motDePasse'])) {
+        $role = new Role($userData['role_id'], $userData['role']);
+        $user = null;
 
-        if ($user && password_verify($password, $user['motDePasse'])) {
-            $roleStmt = $db->prepare("SELECT role FROM Role WHERE id = :role_id");
-            $roleStmt->bindParam(':role_id', $user['role_id']);
-            $roleStmt->execute();
-            $role = $roleStmt->fetchColumn();
-
-            switch ($role) {
-                case 'Etudiant':
-                    $utilisateur = new Etudiant($user['id'], $user['nom'], $user['email'], $user['motDePasse'], new Role($user['role_id'], $role));
-                    break;
-                case 'Enseignant':
-                    $utilisateur = new Enseignant($user['id'], $user['nom'], $user['email'], $user['motDePasse'], new Role($user['role_id'], $role), 1); // 1 pour "approve"
-                    break;
-                case 'Administrateur':
-                    $utilisateur = new Administrateur($user['id'], $user['nom'], $user['email'], $user['motDePasse'], new Role($user['role_id'], $role));
-                    break;
-                default:
-                    throw new Exception("Rôle non reconnu.");
-            }
-
-            $_SESSION['utilisateur'] = $utilisateur;
-
-            switch ($role) {
-                case 'Etudiant':
-                    header('Location: ../views/student/dashboard.php');
-                    break;
-                case 'Enseignant':
-                    header('Location: ../views/teacher/dashboard.php');
-                    break;
-                case 'Administrateur':
-                    header('Location: ../views/admin/dashboard.php');
-                    break;
-            }
-            exit();
-        } else {
-            throw new Exception("Email ou mot de passe incorrect.");
+        switch ($userData['role']) {
+            case 'Administrateur':
+                $user = new Administrateur($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                break;
+            case 'Enseignant':
+                $user = new Enseignant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                break;
+            case 'Etudiant':
+                $user = new Etudiant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                break;
         }
-    } catch (Exception $e) {
-        $_SESSION['error'] = $e->getMessage();
-        header('Location: login.php');
-        exit();
+
+        if ($user) {
+            $user->setId($userData['id']);
+            $user->seConnecter(); // Démarre la session et redirige l'utilisateur
+        }
+    } else {
+        // Afficher un message d'erreur avec SweetAlert
+        echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: 'Email ou mot de passe incorrect.',
+                    });
+                });
+            </script>";
     }
 }
 ?>
@@ -72,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
         font-family: 'Inter', sans-serif;
@@ -82,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <nav class="bg-gray-900 border-b border-gray-800">
             <div class="container mx-auto px-4">
                 <div class="flex justify-between items-center h-20">
-                    <a href="/" class="flex items-center space-x-3">
+                    <a href="index.php" class="flex items-center space-x-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                             <path d="M6 12v5c3 3 9 3 12 0v-5"/>
