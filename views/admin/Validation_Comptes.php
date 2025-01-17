@@ -82,7 +82,7 @@ $enseignantsEnAttente = $admin->validerCompteEnseignant();
                     <i data-feather="users" class="mr-3"></i>
                     Validation Comptes
                 </a>
-                <a href="users.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="manage-users.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="user-check" class="mr-3"></i>
                     Gestion Utilisateurs
                 </a>
