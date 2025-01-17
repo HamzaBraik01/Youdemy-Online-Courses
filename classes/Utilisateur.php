@@ -99,7 +99,7 @@ abstract class Utilisateur {
         session_destroy();
 
 
-        echo "User {$this->nom} disconnected.\n";
+        //echo "User {$this->nom} disconnected.\n";
     }
 
     abstract public function register(): void;

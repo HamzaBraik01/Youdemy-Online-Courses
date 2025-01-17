@@ -4,7 +4,20 @@ require_once '../../classes/Database.php';
 require_once '../../classes/Administrateur.php';
 require_once '../../classes/Role.php';
 
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'Administrateur') {
+    header('Location: ../../public/login.php');
+    exit();
+}
+$_SESSION['user']['role_id']=1;
+$admin = new Administrateur(
+    $_SESSION['user']['nom'],
+    $_SESSION['user']['email'],
+    '', 
+    new Role(1, $_SESSION['user']['role']),
+    $_SESSION['user']['status']
+);
 
+$statistiques = $admin->consulterStatistiquesGlobales();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -13,8 +26,8 @@ require_once '../../classes/Role.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Administrateur - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.1/feather.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body class="bg-gray-100">
     <div class="flex h-screen">
@@ -47,7 +60,7 @@ require_once '../../classes/Role.php';
             </nav>
             <!-- Déconnexion -->
             <div class="p-5 border-t border-gray-700">
-                <a href="../../controllers/logout.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="../../assets/php/logout.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="log-out" class="mr-3"></i>
                     Déconnexion
                 </a>
@@ -129,7 +142,7 @@ require_once '../../classes/Role.php';
                         <div class="space-y-4" id="topTeachersContainer">
                             <?php foreach ($statistiques['topEnseignants'] as $index => $enseignant): ?>
                             <div class="flex items-center">
-                                <img src="/api/placeholder/40/40" alt="Teacher <?php echo $index + 1; ?>" class="rounded-full">
+                                <i data-feather="user" class="w-10 h-10 text-gray-700"></i>
                                 <div class="ml-4 flex-1">
                                     <h4 class="font-semibold"><?php echo htmlspecialchars($enseignant['nom']); ?></h4>
                                     <div class="w-full bg-gray-200 rounded-full h-2.5">

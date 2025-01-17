@@ -60,7 +60,9 @@ class Administrateur extends Utilisateur {
         JOIN 
             Categorie ON Cours.categorie_id = Categorie.id
         JOIN 
-            Utilisateur ON Cours.id_enseignant = Utilisateur.id
+            Enseignant_Cours ON Cours.id = Enseignant_Cours.id_cours
+        JOIN 
+            Utilisateur ON Enseignant_Cours.id_enseignant = Utilisateur.id
         LEFT JOIN 
             Student_Courses ON Cours.id = Student_Courses.id_cours
         WHERE 
