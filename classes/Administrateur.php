@@ -13,7 +13,18 @@ class Administrateur extends Utilisateur {
         echo "Admin {$this->nom} registered.\n";
     }
 
-    public function validerCompteEnseignant(): void {
+    public function validerCompteEnseignant(): array {
+        $db = Database::getInstance()->getConnection();
+
+        $stmt = $db->prepare("
+            SELECT id, nom, email, status 
+            FROM Utilisateur 
+            WHERE role_id = (SELECT id FROM Role WHERE role = 'Enseignant') 
+            AND status = 'en attente'
+        ");
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function gererUtilisateurs(): void {

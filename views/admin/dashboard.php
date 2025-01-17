@@ -41,7 +41,7 @@ $statistiques = $admin->consulterStatistiquesGlobales();
                     <i data-feather="bar-chart-2" class="mr-3"></i>
                     Statistiques
                 </a>
-                <a href="validation.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="Validation_Comptes.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="users" class="mr-3"></i>
                     Validation Comptes
                 </a>
