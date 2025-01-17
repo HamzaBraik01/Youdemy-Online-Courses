@@ -13,9 +13,29 @@ class Administrateur extends Utilisateur {
         echo "Admin {$this->nom} registered.\n";
     }
 
-    public function validerCompteEnseignant(): array {
+    public function validerCompteEnseignant(?int $id = null, ?string $action = null): array {
         $db = Database::getInstance()->getConnection();
 
+        if ($id !== null && $action !== null) {
+            $nouveauStatut = ($action === 'valider') ? 'active' : 'suspendu';
+
+            $stmt = $db->prepare("
+                UPDATE Utilisateur 
+                SET status = :status 
+                WHERE id = :id
+                AND role_id = (SELECT id FROM Role WHERE role = 'Enseignant')
+            ");
+            $stmt->bindParam(':status', $nouveauStatut);
+            $stmt->bindParam(':id', $id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "Le compte a été " . ($action === 'valider' ? 'validé' : 'refusé') . " avec succès.";
+            } else {
+                $_SESSION['error'] = "Une erreur s'est produite lors de la mise à jour du statut.";
+            }
+        }
+
+        // Récupérer la liste des enseignants en attente
         $stmt = $db->prepare("
             SELECT id, nom, email, status 
             FROM Utilisateur 

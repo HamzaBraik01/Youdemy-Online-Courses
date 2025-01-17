@@ -9,6 +9,38 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'Administrateur')
     exit();
 }
 
+// Traitement des actions "Valider" et "Refuser"
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_POST['id'] ?? null;
+    $action = $_POST['action'] ?? null;
+
+    if ($id && $action && in_array($action, ['valider', 'refuser'])) {
+        $admin = new Administrateur(
+            $_SESSION['user']['nom'],
+            $_SESSION['user']['email'],
+            '',
+            new Role(1, $_SESSION['user']['role']),
+            $_SESSION['user']['status']
+        );
+
+        $enseignantsEnAttente = $admin->validerCompteEnseignant($id, $action);
+
+        if ($action === 'valider') {
+            $_SESSION['message'] = "Le compte a été validé avec succès.";
+            $_SESSION['message_type'] = 'success'; 
+        } else {
+            $_SESSION['message'] = "Le compte a été refusé avec succès.";
+            $_SESSION['message_type'] = 'warning'; 
+        }
+
+        header('Location: Validation_Comptes.php');
+        exit();
+    } else {
+        // Données invalides
+        $_SESSION['error'] = "Données invalides.";
+    }
+}
+
 $admin = new Administrateur(
     $_SESSION['user']['nom'],
     $_SESSION['user']['email'],
@@ -16,8 +48,6 @@ $admin = new Administrateur(
     new Role(1, $_SESSION['user']['role']),
     $_SESSION['user']['status']
 );
-
-// Récupérer la liste des enseignants en attente de validation
 $enseignantsEnAttente = $admin->validerCompteEnseignant();
 ?>
 
@@ -86,7 +116,33 @@ $enseignantsEnAttente = $admin->validerCompteEnseignant();
             </header>
 
             <main class="p-6">
-                <!-- Tableau des enseignants en attente -->
+                <?php if (isset($_SESSION['message'])): ?>
+                    <?php
+                    $bgColor = ($_SESSION['message_type'] === 'success') ? 'bg-green-100 border-green-500 text-green-700' : 'bg-orange-100 border-orange-500 text-orange-700';
+                    ?>
+                    <div class="<?php echo $bgColor; ?> border-l-4 p-4 mb-4" role="alert">
+                        <div class="flex items-center">
+                            <i data-feather="check-circle" class="w-6 h-6 mr-2"></i>
+                            <p><?php echo $_SESSION['message']; ?></p>
+                        </div>
+                    </div>
+                    <?php
+                    // Supprimer les messages après affichage
+                    unset($_SESSION['message']);
+                    unset($_SESSION['message_type']);
+                    ?>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                        <div class="flex items-center">
+                            <i data-feather="alert-circle" class="w-6 h-6 mr-2"></i>
+                            <p><?php echo $_SESSION['error']; ?></p>
+                        </div>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
+
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     <table id="enseignantsTable" class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-800">
@@ -110,16 +166,25 @@ $enseignantsEnAttente = $admin->validerCompteEnseignant();
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <div class="flex flex-row space-x-2">
-                                            <!-- Bouton Valider -->
-                                            <button onclick="validerCompte(<?php echo $enseignant['id']; ?>)" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md flex items-center">
-                                                <i data-feather="check" class="w-4 h-4 mr-2"></i>
-                                                Valider
-                                            </button>
-                                            <!-- Bouton Refuser -->
-                                            <button onclick="refuserCompte(<?php echo $enseignant['id']; ?>)" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md flex items-center">
-                                                <i data-feather="x" class="w-4 h-4 mr-2"></i>
-                                                Refuser
-                                            </button>
+                                            <!-- Formulaire pour Valider -->
+                                            <form action="" method="POST" class="inline">
+                                                <input type="hidden" name="id" value="<?php echo $enseignant['id']; ?>">
+                                                <input type="hidden" name="action" value="valider">
+                                                <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md flex items-center">
+                                                    <i data-feather="check" class="w-4 h-4 mr-2"></i>
+                                                    Valider
+                                                </button>
+                                            </form>
+
+                                            <!-- Formulaire pour Refuser -->
+                                            <form action="" method="POST" class="inline">
+                                                <input type="hidden" name="id" value="<?php echo $enseignant['id']; ?>">
+                                                <input type="hidden" name="action" value="refuser">
+                                                <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md flex items-center">
+                                                    <i data-feather="x" class="w-4 h-4 mr-2"></i>
+                                                    Refuser
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -161,20 +226,6 @@ $enseignantsEnAttente = $admin->validerCompteEnseignant();
                 }
             });
         });
-
-        // Fonction pour valider un compte enseignant
-        function validerCompte(id) {
-            if (confirm("Êtes-vous sûr de vouloir valider ce compte ?")) {
-                window.location.href = `valider_compte.php?id=${id}&action=valider`;
-            }
-        }
-
-        // Fonction pour refuser un compte enseignant
-        function refuserCompte(id) {
-            if (confirm("Êtes-vous sûr de vouloir refuser ce compte ?")) {
-                window.location.href = `valider_compte.php?id=${id}&action=refuser`;
-            }
-        }
     </script>
 </body>
 </html>
