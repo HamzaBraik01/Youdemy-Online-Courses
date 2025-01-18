@@ -53,7 +53,7 @@ $statistiques = $admin->consulterStatistiquesGlobales();
                     <i data-feather="book" class="mr-3"></i>
                     Gestion Contenus
                 </a>
-                <a href="tags.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                <a href="tagManager.php" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i data-feather="tag" class="mr-3"></i>
                     Gestion Tags
                 </a>

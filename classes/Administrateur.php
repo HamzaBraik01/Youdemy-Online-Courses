@@ -75,7 +75,33 @@ class Administrateur extends Utilisateur {
     public function gererContenu(): void {
     }
 
-    public function insererTagsEnMasse(): void {
+    public function insererTagsEnMasse(array $tags): array {
+        $db = Database::getInstance()->getConnection();
+        $insertedTags = [];
+        $duplicateTags = [];
+
+        foreach ($tags as $tag) {
+            // Vérifier si le tag existe déjà
+            $stmt = $db->prepare("SELECT id FROM Tag WHERE name = :name");
+            $stmt->bindParam(':name', $tag);
+            $stmt->execute();
+
+            if ($stmt->fetch()) {
+                $duplicateTags[] = $tag;
+            } else {
+                // Insérer le tag s'il n'existe pas
+                $stmt = $db->prepare("INSERT INTO Tag (name) VALUES (:name)");
+                $stmt->bindParam(':name', $tag);
+                if ($stmt->execute()) {
+                    $insertedTags[] = $tag;
+                }
+            }
+        }
+
+        return [
+            'insertedTags' => $insertedTags,
+            'duplicateTags' => $duplicateTags
+        ];
     }
 
     public function consulterStatistiquesGlobales(): array {
