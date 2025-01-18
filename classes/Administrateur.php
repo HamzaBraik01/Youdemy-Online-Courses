@@ -47,7 +47,29 @@ class Administrateur extends Utilisateur {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function gererUtilisateurs(): void {
+    public function gererUtilisateurs(): array {
+        $db = Database::getInstance()->getConnection();
+    
+        $stmtEnseignants = $db->prepare("
+            SELECT id, nom, email, status 
+            FROM Utilisateur 
+            WHERE role_id = (SELECT id FROM Role WHERE role = 'Enseignant')
+        ");
+        $stmtEnseignants->execute();
+        $enseignants = $stmtEnseignants->fetchAll(PDO::FETCH_ASSOC);
+    
+        $stmtEtudiants = $db->prepare("
+            SELECT id, nom, email, status 
+            FROM Utilisateur 
+            WHERE role_id = (SELECT id FROM Role WHERE role = 'Etudiant')
+        ");
+        $stmtEtudiants->execute();
+        $etudiants = $stmtEtudiants->fetchAll(PDO::FETCH_ASSOC);
+    
+        return [
+            'enseignants' => $enseignants,
+            'etudiants' => $etudiants
+        ];
     }
 
     public function gererContenu(): void {
