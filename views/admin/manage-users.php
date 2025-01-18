@@ -17,7 +17,57 @@ $admin = new Administrateur(
     $_SESSION['user']['status']
 );
 
+// Traitement des actions (activer/suspendre et supprimer)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_POST['id'] ?? null;
+    $action = $_POST['action'] ?? null;
 
+    if ($id && $action) {
+        $db = Database::getInstance()->getConnection();
+
+        if ($action === 'update-status') {
+            $status = $_POST['status'] ?? null;
+            if ($status) {
+                $stmt = $db->prepare("
+                    UPDATE Utilisateur 
+                    SET status = :status 
+                    WHERE id = :id
+                ");
+                $stmt->bindParam(':status', $status);
+                $stmt->bindParam(':id', $id);
+
+                if ($stmt->execute()) {
+                    $_SESSION['message'] = "Le statut de l'utilisateur a été mis à jour avec succès.";
+                    $_SESSION['message_type'] = 'success';
+                } else {
+                    $_SESSION['error'] = "Une erreur s'est produite lors de la mise à jour du statut.";
+                }
+            } else {
+                $_SESSION['error'] = "Données invalides.";
+            }
+        } elseif ($action === 'delete') {
+            $stmt = $db->prepare("
+                DELETE FROM Utilisateur 
+                WHERE id = :id
+            ");
+            $stmt->bindParam(':id', $id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "L'utilisateur a été supprimé avec succès.";
+                $_SESSION['message_type'] = 'success';
+            } else {
+                $_SESSION['error'] = "Une erreur s'est produite lors de la suppression de l'utilisateur.";
+            }
+        } else {
+            $_SESSION['error'] = "Action non reconnue.";
+        }
+    } else {
+        $_SESSION['error'] = "Données invalides.";
+    }
+
+    header('Location: manage-users.php');
+    exit();
+}
 
 $utilisateurs = $admin->gererUtilisateurs();
 $enseignants = $utilisateurs['enseignants'];
