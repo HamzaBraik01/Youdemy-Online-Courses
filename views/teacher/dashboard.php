@@ -240,49 +240,9 @@ if (!isset($_SESSION['utilisateur']) || !$_SESSION['utilisateur'] instanceof Ens
         feather.replace();
 
         // Initialize Charts
-        const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
-        new Chart(enrollmentCtx, {
-            type: 'bar',
-            data: {
-                labels: ['JavaScript Avancé', 'Python Basics', 'React Mastery', 'Web Design'],
-                datasets: [{
-                    label: 'Nombre d\'étudiants',
-                    data: [245, 187, 156, 132],
-                    backgroundColor: '#818cf8'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
+        
 
-        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
-        new Chart(engagementCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
-                datasets: [{
-                    label: 'Taux d\'engagement',
-                    data: [65, 72, 78, 75, 82, 85],
-                    borderColor: '#10b981',
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
-        });
+        
     </script>
 </body>
 </html>
