@@ -56,7 +56,7 @@ $Enseignant = new Enseignant(
             </nav>
             <!-- Déconnexion -->
             <div class="p-5 border-t border-indigo-600">
-                <a href="#" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
+                <a href="../../assets/php/logout.php" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
                     <i data-feather="log-out" class="mr-3"></i>
                     Déconnexion
                 </a>
