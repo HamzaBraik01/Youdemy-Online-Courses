@@ -1,13 +1,22 @@
 <?php
 session_start();
+require_once '../../classes/Database.php';
+require_once '../../classes/Role.php';
 require_once '../../classes/Enseignant.php';
 
-if (!isset($_SESSION['utilisateur']) || !$_SESSION['utilisateur'] instanceof Enseignant) {
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'Enseignant') {
     header('Location: ../../public/login.php');
     exit();
 }
+$_SESSION['user']['role_id']=2;
+$Enseignant = new Enseignant(
+    $_SESSION['user']['nom'],
+    $_SESSION['user']['email'],
+    '', 
+    new Role(2, $_SESSION['user']['role']),
+    $_SESSION['user']['status']
+);
 
-// Afficher le contenu du tableau de bord des enseignants
 ?>
 <!DOCTYPE html>
 <html lang="fr">

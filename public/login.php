@@ -25,19 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($userData && password_verify($password, $userData['motDePasse'])) {
         $role = new Role($userData['role_id'], $userData['role']);
         $user = null;
-
+    
         switch ($userData['role']) {
             case 'Administrateur':
                 $user = new Administrateur($userData['nom'], $userData['email'], $password, $role, $userData['status']);
                 break;
             case 'Enseignant':
+                // Assurez-vous que le statut est bien récupéré depuis la base de données
                 $user = new Enseignant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
                 break;
             case 'Etudiant':
                 $user = new Etudiant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
                 break;
         }
-
+    
         if ($user) {
             $user->setId($userData['id']);
             $user->seConnecter(); // Démarre la session et redirige l'utilisateur

@@ -141,7 +141,11 @@ abstract class Utilisateur {
                 header('Location: ../views/admin/dashboard.php');
                 break;
             case 'Enseignant':
-                header('Location: ../views/teacher/dashboard.php');
+                if ($this->status === 'active') {
+                    header('Location: ../views/teacher/dashboard.php');
+                } else {
+                    header('Location: ../public/login.php');
+                }
                 break;
             case 'Etudiant':
                 header('Location: ../views/student/dashboard.php');
