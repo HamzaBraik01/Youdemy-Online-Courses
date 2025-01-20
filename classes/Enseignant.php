@@ -10,9 +10,7 @@ class Enseignant extends Utilisateur {
 
     
     public function register(): void {
-        // Enregistrer l'utilisateur dans la base de données
         $this->save();
-        //echo "Teacher {$this->getNom()} registered.\n"; 
     }
 
     
@@ -36,7 +34,6 @@ class Enseignant extends Utilisateur {
     public function consulterStatistiques(): array {
         $enseignantId = $_SESSION['user']['id'];
         $db = Database::getInstance()->getConnection();
-        // Requête pour récupérer le nombre total de cours créés par l'enseignant
         $queryCours = "SELECT COUNT(*) as total_cours FROM enseignant_cours WHERE id_enseignant = :id_enseignant";
         $stmtCours = $db->prepare($queryCours);
         $stmtCours->execute(['id_enseignant' => $enseignantId]);

@@ -1,5 +1,4 @@
 <?php
-
 abstract class Course {
     protected $id;
     protected $title;
@@ -20,16 +19,9 @@ abstract class Course {
         $this->status = $status;
     }
 
-    // Méthodes
-    public function afficheDetails() {
-        
-    }
-
-    public function afficheContent() {
-        
-    }
-
-    public function ajouterContent() {
-    }
+    // Méthodes abstraites
+    abstract public function afficheDetails();
+    abstract public function afficheCourse();
+    abstract public function ajouterCourse();
 }
 ?>
