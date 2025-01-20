@@ -1,23 +1,35 @@
 <?php
-class Cours {
-    public int $id;
-    public string $titre;
-    public string $description;
-    public string $contenu;
-    public string $image;
-    public Categorie $categorie;
-    public array $tags = []; // Array of Tag objects
 
-    public function __construct(int $id, string $titre, string $description, string $contenu, string $image, Categorie $categorie) {
+abstract class Course {
+    protected $id;
+    protected $title;
+    protected $description;
+    protected $content;
+    protected $image;
+    protected $type;
+    protected $status;
+
+    // Constructeur
+    public function __construct($id, $title, $description, $content, $image, $type, $status) {
         $this->id = $id;
-        $this->titre = $titre;
+        $this->title = $title;
         $this->description = $description;
-        $this->contenu = $contenu;
+        $this->content = $content;
         $this->image = $image;
-        $this->categorie = $categorie;
+        $this->type = $type;
+        $this->status = $status;
     }
 
-    public function afficherDetails(): void {
+    // Méthodes
+    public function afficheDetails() {
+        
+    }
+
+    public function afficheContent() {
+        
+    }
+
+    public function ajouterContent() {
     }
 }
 ?>

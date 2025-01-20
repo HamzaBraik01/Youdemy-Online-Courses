@@ -1,18 +1,16 @@
 <?php
-class Context extends Content {
-    public string $objectif;
+require_once 'Database.php';
+require_once 'Cours.php';
+class Context extends Course {
+    private $objectif;
 
-    public function __construct(int $id, string $titre, string $description, Categorie $categorie, string $objectif) {
-        parent::__construct($id, $titre, $description, $categorie);
+    public function __construct($id, $title, $description, $content, $image, $status, $objectif) {
+        parent::__construct($id, $title, $description, $content, $image, 'CONTEXTE', $status);
         $this->objectif = $objectif;
     }
 
-    public function ajouterContenu(): void {
-        echo "Objective content '{$this->titre}' added.\n";
-    }
-
-    public function afficherContenu(): void {
-        echo "Displaying objective content: {$this->titre}, Objective: {$this->objectif}\n";
+    public function getObjectif() {
+        return $this->objectif;
     }
 }
 ?>

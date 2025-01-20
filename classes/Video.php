@@ -1,18 +1,16 @@
 <?php
-class Video extends Content {
-    public string $url;
+require_once 'Database.php';
+require_once 'Cours.php';
+class Video extends Course {
+    private $url;
 
-    public function __construct(int $id, string $titre, string $description, Categorie $categorie, string $url) {
-        parent::__construct($id, $titre, $description, $categorie);
+    public function __construct($id, $title, $description, $content, $image, $status, $url) {
+        parent::__construct($id, $title, $description, $content, $image, 'VIDEO', $status);
         $this->url = $url;
     }
 
-    public function ajouterContenu(): void {
-        echo "Video content '{$this->titre}' added.\n";
-    }
-
-    public function afficherContenu(): void {
-        echo "Displaying video: {$this->titre}, URL: {$this->url}\n";
+    public function getUrl() {
+        return $this->url;
     }
 }
 ?>

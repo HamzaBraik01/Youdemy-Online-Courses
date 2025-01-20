@@ -37,7 +37,7 @@ $Enseignant = new Enseignant(
                 <p class="text-indigo-200 text-sm mt-1">Dr. <?php echo htmlspecialchars($_SESSION['user']['nom']); ?></p>
             </div>
             <nav class="flex-1">
-                <a href="dashboard.php" class="flex items-center px-6 py-3 text-indigo-100 bg-indigo-800">
+                <a href="dashboard.php" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
                     <i data-feather="bar-chart-2" class="mr-3"></i>
                     Statistiques
                 </a>
@@ -45,7 +45,7 @@ $Enseignant = new Enseignant(
                     <i data-feather="plus-circle" class="mr-3"></i>
                     Nouveau Cours
                 </a>
-                <a href="my-courses.php" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
+                <a href="my-courses.php" class="flex items-center px-6 py-3 text-indigo-100 bg-indigo-800">
                     <i data-feather="book-open" class="mr-3"></i>
                     Mes Cours
                 </a>

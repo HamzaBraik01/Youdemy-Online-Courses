@@ -105,3 +105,25 @@ INSERT INTO Role (role) VALUES
 -- Insertion d'un utilisateur administrateur par défaut
 INSERT INTO Utilisateur (nom, email, motDePasse, role_id) VALUES 
     ('Admin', 'admin@admin.com', '$2y$10$n2efksBeVtKlfWbSNLKKfeLNELB3VoTPsaw72boNC3xmHFxxC8GT2', 1);
+
+
+ALTER TABLE Cours
+ADD COLUMN type ENUM('VIDEO', 'CONTEXTE') NOT NULL AFTER contenu;
+
+DROP TABLE IF EXISTS Context, Video, Content;
+
+-- Table pour les vidéos
+CREATE TABLE Video (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    url VARCHAR(255) NOT NULL,
+    cours_id INT NOT NULL,
+    FOREIGN KEY (cours_id) REFERENCES Cours(id)
+);
+
+-- Table pour les contextes
+CREATE TABLE Contexte (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    objectif TEXT NOT NULL,
+    cours_id INT NOT NULL,
+    FOREIGN KEY (cours_id) REFERENCES Cours(id)
+);

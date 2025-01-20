@@ -23,28 +23,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($userData && password_verify($password, $userData['motDePasse'])) {
-        $role = new Role($userData['role_id'], $userData['role']);
-        $user = null;
-    
-        switch ($userData['role']) {
-            case 'Administrateur':
-                $user = new Administrateur($userData['nom'], $userData['email'], $password, $role, $userData['status']);
-                break;
-            case 'Enseignant':
-                // Assurez-vous que le statut est bien récupéré depuis la base de données
-                $user = new Enseignant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
-                break;
-            case 'Etudiant':
-                $user = new Etudiant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
-                break;
-        }
-    
-        if ($user) {
-            $user->setId($userData['id']);
-            $user->seConnecter(); // Démarre la session et redirige l'utilisateur
+        if ($userData['status'] === 'suspendu') {
+            // Afficher un message d'erreur avec SweetAlert pour un compte suspendu
+            echo "<script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Compte suspendu',
+                            text: 'Votre compte est banni. Se réinscrire ou contacter admin@admin.com',
+                        });
+                    });
+                </script>";
+        } else {
+            $role = new Role($userData['role_id'], $userData['role']);
+            $user = null;
+        
+            switch ($userData['role']) {
+                case 'Administrateur':
+                    $user = new Administrateur($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                    break;
+                case 'Enseignant':
+                    $user = new Enseignant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                    break;
+                case 'Etudiant':
+                    $user = new Etudiant($userData['nom'], $userData['email'], $password, $role, $userData['status']);
+                    break;
+            }
+        
+            if ($user) {
+                $user->setId($userData['id']);
+                $user->seConnecter(); // Démarre la session et redirige l'utilisateur
+            }
         }
     } else {
-        // Afficher un message d'erreur avec SweetAlert
+        // Afficher un message d'erreur avec SweetAlert pour un email ou mot de passe incorrect
         echo "<script>
                 document.addEventListener('DOMContentLoaded', function() {
                     Swal.fire({
