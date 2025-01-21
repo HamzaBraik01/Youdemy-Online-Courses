@@ -262,4 +262,20 @@ class Enseignant extends Utilisateur {
             'top_cours' => $topCours
         ];
     }
+    public function getEtudiantsInscrits(): array {
+        $db = Database::getInstance()->getConnection();
+        $enseignantId = $_SESSION['user']['id'];
+    
+        $query = "
+            SELECT u.nom, u.email 
+            FROM utilisateur u
+            JOIN student_courses sc ON u.id = sc.id_etudiant
+            JOIN enseignant_cours ec ON sc.id_cours = ec.id_cours
+            WHERE ec.id_enseignant = :id_enseignant
+            GROUP BY u.id
+        ";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':id_enseignant' => $enseignantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -97,7 +97,7 @@ foreach ($courses as $course) {
                     <i data-feather="book-open" class="mr-3"></i>
                     Mes Cours
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
+                <a href="Inscriptions-in-courses.php" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
                     <i data-feather="users" class="mr-3"></i>
                     Inscriptions
                 </a>
@@ -174,7 +174,7 @@ foreach ($courses as $course) {
                                                     <i data-feather="trash-2" class="w-5 h-5"></i>
                                                 </button>
                                             </form>
-                                            <a href="view-enrollments.php?id=<?php echo htmlspecialchars($course['id']); ?>" class="text-green-600 hover:text-green-900 flex items-center">
+                                            <a href="" class="text-green-600 hover:text-green-900 flex items-center">
                                                 <i data-feather="users" class="w-5 h-5 mr-1"></i>
                                                 <span class="text-sm"><?php echo htmlspecialchars($course['nb_etudiants']); ?></span>
                                             </a>

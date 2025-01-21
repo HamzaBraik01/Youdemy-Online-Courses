@@ -50,7 +50,7 @@ $statistiques = $Enseignant->consulterStatistiques();
                     <i data-feather="book-open" class="mr-3"></i>
                     Mes Cours
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
+                <a href="Inscriptions-in-courses.php" class="flex items-center px-6 py-3 text-indigo-100 hover:bg-indigo-800">
                     <i data-feather="users" class="mr-3"></i>
                     Inscriptions
                 </a>
