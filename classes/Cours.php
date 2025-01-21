@@ -22,6 +22,6 @@ abstract class Course {
     // Méthodes abstraites
     abstract public function afficheDetails();
     abstract public function afficheCourse();
-    abstract public function ajouterCourse();
+    abstract public function ajouterCourse($categorie_id);
 }
 ?>

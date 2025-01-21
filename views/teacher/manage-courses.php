@@ -3,12 +3,16 @@ session_start();
 require_once '../../classes/Database.php';
 require_once '../../classes/Role.php';
 require_once '../../classes/Enseignant.php';
+require_once '../../classes/Video.php';
+require_once '../../classes/Context.php';
 
+// Vérifier si l'utilisateur est connecté et est un enseignant
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'Enseignant') {
     header('Location: ../../public/login.php');
     exit();
 }
 
+// Initialiser l'objet Enseignant
 $_SESSION['user']['role_id'] = 2;
 $Enseignant = new Enseignant(
     $_SESSION['user']['nom'],
@@ -17,8 +21,49 @@ $Enseignant = new Enseignant(
     new Role(2, $_SESSION['user']['role']),
     $_SESSION['user']['status']
 );
-?>
 
+// Traitement du formulaire
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Récupérer les données du formulaire
+    $title = $_POST['title'];
+    $description = $_POST['description'];
+    $content = $_POST['content'];
+    $image = $_FILES['image']['name'];
+    $type = $_POST['contentType'];
+    $status = 1; // Par défaut, le cours est actif
+    $categorie_id = $_POST['category']; // Récupérer la catégorie sélectionnée
+    $tags = $_POST['tags'] ?? [];
+
+    // Gestion de l'upload de l'image
+    $target_dir = "../../assets/uploads/";
+    $target_file = $target_dir . basename($_FILES["image"]["name"]);
+    move_uploaded_file($_FILES["image"]["tmp_name"], $target_file);
+
+    // Données supplémentaires en fonction du type de contenu
+    $additionalData = [];
+    if ($type === 'VIDEO') {
+        $additionalData['url'] = $_FILES['video']['name'];
+        // Gestion de l'upload de la vidéo
+        $target_file_video = $target_dir . basename($_FILES["video"]["name"]);
+        move_uploaded_file($_FILES["video"]["tmp_name"], $target_file_video);
+    } elseif ($type === 'CONTEXTE') {
+        // Vérifier si le champ objectif est défini
+        if (isset($_POST['objectif'])) {
+            $additionalData['objectif'] = $_POST['objectif'];
+        } else {
+            $additionalData['objectif'] = ''; // Valeur par défaut si le champ n'est pas défini
+        }
+    }
+
+    // Ajouter le cours
+    try {
+        $Enseignant->ajouterCours($title, $description, $content, $image, $type, $status, $categorie_id, $tags, $additionalData);
+        $success_message = "Le cours a été ajouté avec succès.";
+    } catch (Exception $e) {
+        $error_message = "Erreur : " . $e->getMessage();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -83,8 +128,20 @@ $Enseignant = new Enseignant(
             </header>
 
             <main class="p-6">
+                <!-- Afficher les messages de succès ou d'erreur -->
+                <?php if (isset($success_message)) : ?>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                        <?php echo $success_message; ?>
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($error_message)) : ?>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        <?php echo $error_message; ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="max-w-4xl mx-auto form-container">
-                    <form id="courseForm" method="POST" action="process_course.php" enctype="multipart/form-data" class="space-y-6">
+                    <form id="courseForm" method="POST" action="" enctype="multipart/form-data" class="space-y-6">
                         <!-- Titre du cours -->
                         <div>
                             <label for="title" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -110,12 +167,18 @@ $Enseignant = new Enseignant(
                                 Catégorie
                             </label>
                             <div class="flex gap-4">
-                                <select id="category" name="category" class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                <select id="category" name="category" class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
                                     <option value="">Sélectionnez une catégorie</option>
-                                    <?php  ?>
-                                    <option value="autre">Autre</option>
+                                    <?php
+                                    // Récupérer les catégories depuis la base de données
+                                    $db = Database::getInstance()->getConnection();
+                                    $query = "SELECT * FROM categorie";
+                                    $stmt = $db->query($query);
+                                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                        echo '<option value="' . $row['id'] . '">' . htmlspecialchars($row['name']) . '</option>';
+                                    }
+                                    ?>
                                 </select>
-                                <input type="text" id="newCategory" name="newCategory" placeholder="Nouvelle catégorie" class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 hidden">
                             </div>
                         </div>
 
@@ -127,15 +190,10 @@ $Enseignant = new Enseignant(
                             </label>
                             <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                                 <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                            <span>Télécharger une image</span>
-                                            <input id="image" name="image" type="file" class="sr-only" accept="image/*" required>
-                                        </label>
-                                    </div>
+                                    <input id="image" name="image" type="file" class="sr-only" accept="image/*" required>
+                                    <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        <span>Télécharger une image</span>
+                                    </label>
                                     <p class="text-xs text-gray-500">PNG, JPG jusqu'à 10MB</p>
                                 </div>
                             </div>
@@ -149,11 +207,11 @@ $Enseignant = new Enseignant(
                             </label>
                             <div class="flex gap-4 mb-4">
                                 <label class="flex items-center">
-                                    <input type="radio" name="contentType" value="video" class="form-radio h-4 w-4 text-indigo-600" required>
+                                    <input type="radio" name="contentType" value="VIDEO" class="form-radio h-4 w-4 text-indigo-600" required>
                                     <span class="ml-2">Vidéo</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input type="radio" name="contentType" value="text" class="form-radio h-4 w-4 text-indigo-600">
+                                    <input type="radio" name="contentType" value="CONTEXTE" class="form-radio h-4 w-4 text-indigo-600">
                                     <span class="ml-2">Contenu textuel</span>
                                 </label>
                             </div>
@@ -162,15 +220,10 @@ $Enseignant = new Enseignant(
                             <div id="videoUpload" class="hidden">
                                 <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                                     <div class="space-y-1 text-center">
-                                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
-                                        </svg>
-                                        <div class="flex text-sm text-gray-600">
-                                            <label for="video" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                                <span>Télécharger une vidéo</span>
-                                                <input id="video" name="video" type="file" class="sr-only" accept="video/*">
-                                            </label>
-                                        </div>
+                                        <input id="video" name="video" type="file" class="sr-only" accept="video/*">
+                                        <label for="video" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                            <span>Télécharger une vidéo</span>
+                                        </label>
                                         <p class="text-xs text-gray-500">MP4, WebM jusqu'à 1GB</p>
                                     </div>
                                 </div>
@@ -199,6 +252,14 @@ $Enseignant = new Enseignant(
                                     <div contenteditable="true" id="editor" class="p-4 min-h-[200px]"></div>
                                     <input type="hidden" name="content" id="hiddenContent">
                                 </div>
+                                <!-- Ajouter le champ pour l'objectif -->
+                                <div class="mt-4">
+                                    <label for="objectif" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                        <i data-feather="target" class="mr-2"></i>
+                                        Objectif du cours
+                                    </label>
+                                    <textarea id="objectif" name="objectif" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                </div>
                             </div>
                         </div>
 
@@ -208,22 +269,20 @@ $Enseignant = new Enseignant(
                                 <i data-feather="tag" class="mr-2"></i>
                                 Tags
                             </label>
-                            <div class="flex flex-wrap gap-2 mb-2" id="tagContainer">
-                                <!-- Tags prédéfinis -->
+                            <div class="flex flex-wrap gap-4 mb-2">
                                 <?php
-                                $predefinedTags = ['Programmation', 'Mathématiques', 'Physique', 'Chimie', 'Biologie', 'Histoire', 'Géographie'];
-                                foreach ($predefinedTags as $tag) {
-                                    echo '<button type="button" onclick="addPredefinedTag(\'' . $tag . '\')" class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full hover:bg-indigo-200">' . $tag . '</button>';
+                                // Récupérer les tags depuis la base de données
+                                $query = "SELECT * FROM tag";
+                                $stmt = $db->query($query);
+                                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                    echo '
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="tags[]" value="' . $row['id'] . '" class="form-checkbox h-5 w-5 text-indigo-600 rounded">
+                                        <span class="text-gray-700">' . htmlspecialchars($row['name']) . '</span>
+                                    </label>';
                                 }
                                 ?>
                             </div>
-                            <div class="flex gap-2">
-                                <input type="text" id="tagInput" placeholder="Ajouter un tag" class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                                <button type="button" onclick="addTag()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                                    Ajouter
-                                </button>
-                            </div>
-                            <input type="hidden" name="tags" id="hiddenTags">
                         </div>
 
                         <!-- Bouton de soumission -->
@@ -242,18 +301,6 @@ $Enseignant = new Enseignant(
         // Initialiser les icônes Feather
         feather.replace();
 
-        // Gestion de la catégorie "Autre"
-        document.getElementById('category').addEventListener('change', function() {
-            const newCategoryInput = document.getElementById('newCategory');
-            if (this.value === 'autre') {
-                newCategoryInput.classList.remove('hidden');
-                newCategoryInput.required = true;
-            } else {
-                newCategoryInput.classList.add('hidden');
-                newCategoryInput.required = false;
-            }
-        });
-
         // Gestion du type de contenu
         document.querySelectorAll('input[name="contentType"]').forEach(radio => {
             radio.addEventListener('change', function() {
@@ -261,11 +308,11 @@ $Enseignant = new Enseignant(
                 const textEditor = document.getElementById('textEditor');
                 const videoInput = document.getElementById('video');
                 
-                if (this.value === 'video') {
+                if (this.value === 'VIDEO') {
                     videoUpload.classList.remove('hidden');
                     textEditor.classList.add('hidden');
                     videoInput.required = true;
-                    editor.textContent = '';
+                    document.getElementById('editor').textContent = '';
                 } else {
                     videoUpload.classList.add('hidden');
                     textEditor.classList.remove('hidden');
@@ -274,98 +321,11 @@ $Enseignant = new Enseignant(
             });
         });
 
-        // Prévisualisation de l'image
-        document.getElementById('image').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const preview = document.createElement('img');
-                        preview.src = e.target.result;
-                        preview.classList.add('mt-2', 'max-h-48', 'mx-auto');
-                        
-                        // Supprimer l'ancienne prévisualisation s'il y en a une
-                        const oldPreview = this.parentElement.querySelector('img');
-                        if (oldPreview) {
-                            oldPreview.remove();
-                        }
-                        
-                        this.parentElement.appendChild(preview);
-                    }.bind(this.parentElement);
-                    reader.readAsDataURL(file);
-                } else {
-                    alert('Veuillez sélectionner une image valide.');
-                    this.value = '';
-                }
-            }
-        });
-
         // Fonctions de l'éditeur de texte
         function execCommand(command) {
             document.execCommand(command, false, null);
             document.getElementById('editor').focus();
         }
-
-        // Gestion des tags
-        let tags = new Set();
-
-        function addTag() {
-            const input = document.getElementById('tagInput');
-            const tag = input.value.trim();
-            
-            if (tag && !tags.has(tag)) {
-                tags.add(tag);
-                updateTagDisplay();
-                updateHiddenTags();
-                input.value = '';
-            }
-        }
-
-        function addPredefinedTag(tag) {
-            if (!tags.has(tag)) {
-                tags.add(tag);
-                updateTagDisplay();
-                updateHiddenTags();
-            }
-        }
-
-        function removeTag(tag) {
-            tags.delete(tag);
-            updateTagDisplay();
-            updateHiddenTags();
-        }
-
-        function updateTagDisplay() {
-            const container = document.getElementById('tagContainer');
-            container.innerHTML = '';
-            
-            tags.forEach(tag => {
-                const tagElement = document.createElement('div');
-                tagElement.className = 'flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full';
-                tagElement.innerHTML = `
-                    <span>${tag}</span>
-                    <button type="button" onclick="removeTag('${tag}')" class="text-indigo-600 hover:text-indigo-800">
-                        <i data-feather="x"></i>
-                    </button>
-                `;
-                container.appendChild(tagElement);
-            });
-            
-            feather.replace();
-        }
-
-        function updateHiddenTags() {
-            document.getElementById('hiddenTags').value = Array.from(tags).join(',');
-        }
-
-        // Ajouter tag avec la touche Entrée
-        document.getElementById('tagInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag();
-            }
-        });
 
         // Gestion de la soumission du formulaire
         document.getElementById('courseForm').addEventListener('submit', function(e) {
@@ -382,14 +342,21 @@ $Enseignant = new Enseignant(
                 return;
             }
 
-            if (contentType.value === 'video' && !document.getElementById('video').files.length) {
+            if (contentType.value === 'VIDEO' && !document.getElementById('video').files.length) {
                 alert('Veuillez sélectionner une vidéo');
                 return;
             }
 
-            if (contentType.value === 'text' && !editorContent.trim()) {
-                alert('Veuillez ajouter du contenu textuel');
-                return;
+            if (contentType.value === 'CONTEXTE') {
+                const objectif = document.getElementById('objectif').value.trim();
+                if (!objectif) {
+                    alert('Veuillez ajouter un objectif pour le cours');
+                    return;
+                }
+                if (!editorContent.trim()) {
+                    alert('Veuillez ajouter du contenu textuel');
+                    return;
+                }
             }
 
             // Soumettre le formulaire

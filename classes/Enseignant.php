@@ -1,6 +1,8 @@
 <?php
 require_once 'Database.php';
 require_once 'Utilisateur.php';
+require_once 'Video.php';
+require_once 'Context.php';
 
 class Enseignant extends Utilisateur {
     // Constructeur
@@ -19,7 +21,54 @@ class Enseignant extends Utilisateur {
     }
 
     
-    public function ajouterCours(): void {
+    public function ajouterCours($title, $description, $content, $image, $type, $status, $categorie_id, $tags, $additionalData = []) {
+        // Vérifier le type de contenu
+        if ($type === 'VIDEO') {
+            // Créer une instance de Video
+            $video = new Video(null, $title, $description, null, $image, $status, $additionalData['url']);
+            $cours_id = $video->ajouterCourse($categorie_id); // Passer la catégorie sélectionnée
+        } elseif ($type === 'CONTEXTE') {
+            // Créer une instance de Context
+            $context = new Context(null, $title, $description, $content, $image, $status, $additionalData['objectif']);
+            $cours_id = $context->ajouterCourse($categorie_id); // Passer la catégorie sélectionnée
+        } else {
+            throw new Exception("Type de contenu non supporté.");
+        }
+    
+        // Ajouter l'enseignant et le cours dans la table Enseignant_Cours
+        $this->ajouterEnseignantCours($cours_id);
+    
+        // Ajouter les tags dans la table Course_Tag
+        $this->ajouterTagsAuCours($cours_id, $tags);
+    }
+    
+    private function ajouterEnseignantCours($cours_id) {
+        $db = Database::getInstance()->getConnection();
+    
+        // Récupérer l'ID de l'enseignant depuis la session
+        $enseignant_id = $_SESSION['user']['id'];
+    
+        // Insérer dans la table Enseignant_Cours
+        $query = "INSERT INTO Enseignant_Cours (id_enseignant, id_cours) VALUES (:id_enseignant, :id_cours)";
+        $stmt = $db->prepare($query);
+        $stmt->execute([
+            ':id_enseignant' => $enseignant_id,
+            ':id_cours' => $cours_id
+        ]);
+    }
+    
+    private function ajouterTagsAuCours($cours_id, $tags) {
+        $db = Database::getInstance()->getConnection();
+    
+        // Insérer chaque tag sélectionné dans la table Course_Tag
+        foreach ($tags as $tag_id) {
+            $query = "INSERT INTO Course_Tag (id_tag, id_cours) VALUES (:id_tag, :id_cours)";
+            $stmt = $db->prepare($query);
+            $stmt->execute([
+                ':id_tag' => $tag_id,
+                ':id_cours' => $cours_id
+            ]);
+        }
     }
 
     
