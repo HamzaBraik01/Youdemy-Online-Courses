@@ -17,7 +17,7 @@ $admin = new Administrateur(
     $_SESSION['user']['status']
 );
 
-// Traitement des actions (activer/suspendre et supprimer)
+// Traitement des actions (activer/suspendre, supprimer, modifier)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'] ?? null;
     $action = $_POST['action'] ?? null;
@@ -77,6 +77,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $_SESSION['error'] = "Une erreur s'est produite lors de la suppression du cours.";
             }
+        } elseif ($action === 'update-category') {
+            $name = $_POST['name'] ?? null;
+            if ($name) {
+                $stmt = $db->prepare("UPDATE Categorie SET name = :name WHERE id = :id");
+                $stmt->bindParam(':name', $name);
+                $stmt->bindParam(':id', $id);
+
+                if ($stmt->execute()) {
+                    $_SESSION['message'] = "La catégorie a été mise à jour avec succès.";
+                    $_SESSION['message_type'] = 'success';
+                } else {
+                    $_SESSION['error'] = "Une erreur s'est produite lors de la mise à jour de la catégorie.";
+                }
+            } else {
+                $_SESSION['error'] = "Données invalides.";
+            }
+        } elseif ($action === 'delete-category') {
+            $stmt = $db->prepare("DELETE FROM Categorie WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "La catégorie a été supprimée avec succès.";
+                $_SESSION['message_type'] = 'success';
+            } else {
+                $_SESSION['error'] = "Une erreur s'est produite lors de la suppression de la catégorie.";
+            }
         } else {
             $_SESSION['error'] = "Action non reconnue.";
         }
@@ -88,8 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-// Récupérer les contenus
+// Récupérer les contenus et les catégories
 $contenus = $admin->gererContenu();
+$categories = $admin->gererCategories();
 ?>
 
 <!DOCTYPE html>
@@ -238,7 +265,64 @@ $contenus = $admin->gererContenu();
                         </table>
                     </div>
                 </div>
+
+                <!-- Section Catégories -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold mb-4">Gestion des Catégories</h2>
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table id="Gestion_des_categories" class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-800">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nom</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <?php foreach ($categories as $categorie): ?>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($categorie['name']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex flex-row space-x-2">
+                                                <!-- Bouton Modifier -->
+                                                <button onclick="openEditModal(<?php echo $categorie['id']; ?>, '<?php echo htmlspecialchars($categorie['name']); ?>')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md flex items-center" title="Modifier">
+                                                    <i data-feather="edit" class="w-4 h-4"></i>
+                                                </button>
+
+                                                <!-- Bouton Supprimer -->
+                                                <form action="" method="POST" class="inline">
+                                                    <input type="hidden" name="id" value="<?php echo $categorie['id']; ?>">
+                                                    <input type="hidden" name="action" value="delete-category">
+                                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md flex items-center" title="Supprimer">
+                                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Modale pour modifier une catégorie -->
+    <div id="editCategoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Modifier la catégorie</h3>
+                <form id="editCategoryForm" action="" method="POST" class="mt-2">
+                    <input type="hidden" name="id" id="editCategoryId">
+                    <input type="hidden" name="action" value="update-category">
+                    <input type="text" name="name" id="editCategoryName" class="border border-gray-300 rounded-md px-2 py-1 w-full">
+                    <div class="flex justify-end mt-4">
+                        <button type="button" onclick="closeEditModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md mr-2">Annuler</button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -246,7 +330,7 @@ $contenus = $admin->gererContenu();
         // Initialize Feather Icons
         feather.replace();
 
-        // Initialize DataTables
+        // Initialize DataTables for Cours
         $(document).ready(function() {
             $('#Gestion_des_contenus').DataTable({
                 paging: true,
@@ -270,7 +354,42 @@ $contenus = $admin->gererContenu();
                         .addClass('pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500');
                 }
             });
+
+            // Initialize DataTables for Catégories
+            $('#Gestion_des_categories').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                responsive: true,
+                language: {
+                    search: "Rechercher :",
+                    searchPlaceholder: "Nom...",
+                    paginate: {
+                        first: "Premier",
+                        last: "Dernier",
+                        next: "Suivant",
+                        previous: "Précédent"
+                    }
+                },
+                dom: '<"flex justify-between items-center mb-4"<"flex-1"l><"flex-1"f>>rt<"flex justify-between items-center mt-4"<"flex-1"i><"flex-1"p>>',
+                initComplete: function() {
+                    $('.dataTables_filter input')
+                        .addClass('pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500');
+                }
+            });
         });
+
+        // Gestion de la modale
+        function openEditModal(id, name) {
+            document.getElementById('editCategoryId').value = id;
+            document.getElementById('editCategoryName').value = name;
+            document.getElementById('editCategoryModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editCategoryModal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>

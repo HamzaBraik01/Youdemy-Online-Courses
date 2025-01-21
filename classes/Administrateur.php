@@ -199,6 +199,16 @@ class Administrateur extends Utilisateur {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function gererCategories(): array {
+        $db = Database::getInstance()->getConnection();
+    
+        $stmt = $db->prepare("SELECT * FROM Categorie");
+        $stmt->execute();
+    
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+
     
 }
 ?>
