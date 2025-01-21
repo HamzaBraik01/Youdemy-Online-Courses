@@ -72,8 +72,6 @@ class Administrateur extends Utilisateur {
         ];
     }
 
-    public function gererContenu(): void {
-    }
 
     public function insererTagsEnMasse(array $tags): array {
         $db = Database::getInstance()->getConnection();
@@ -172,6 +170,33 @@ class Administrateur extends Utilisateur {
             'repartitionCours' => $repartitionCours,
             'topEnseignants' => $topEnseignants
         ];
+    }
+    public function gererContenu(): array {
+        $db = Database::getInstance()->getConnection();
+    
+        $stmt = $db->prepare("
+            SELECT 
+                Cours.id AS cours_id,
+                Cours.titre AS cours_titre,
+                Cours.description AS cours_description,
+                Cours.status AS cours_status,
+                Categorie.name AS categorie_name,
+                Utilisateur.nom AS enseignant_nom,
+                Utilisateur.email AS enseignant_email
+            FROM 
+                Cours
+            JOIN 
+                Categorie ON Cours.categorie_id = Categorie.id
+            JOIN 
+                Enseignant_Cours ON Cours.id = Enseignant_Cours.id_cours
+            JOIN 
+                Utilisateur ON Enseignant_Cours.id_enseignant = Utilisateur.id
+            ORDER BY 
+                Cours.titre ASC
+        ");
+        $stmt->execute();
+    
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     
