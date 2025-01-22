@@ -13,7 +13,7 @@
     $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Pagination et filtrage par catégorie
-    $limit = 6; // Nombre de cours par page
+    $limit = 6; 
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $category_id = isset($_GET['category']) ? (int)$_GET['category'] : null;
     $search = isset($_GET['search']) ? $_GET['search'] : null;
@@ -34,6 +34,8 @@
     <title>Courses - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -109,14 +111,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <?php foreach ($courses as $course): ?>
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                    <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
+                    <img src="../assets/uploads/<?php echo $course['cours_image']; ?>" alt="Course thumbnail" class="w-full h-48 object-cover"/>
                     <div class="p-6">
                         <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"><?php echo htmlspecialchars($course['categorie_name']); ?></span>
                         <h3 class="text-xl font-semibold mt-4 mb-2"><?php echo htmlspecialchars($course['cours_titre']); ?></h3>
                         <p class="text-gray-600 mb-4"><?php echo htmlspecialchars($course['cours_description']); ?></p>
                         <div class="flex items-center justify-between">
-                            <span class="text-2xl font-bold text-gray-900">$89.99</span>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
+                            <span class="text-2xl font-bold text-gray-900">199.99DH</span>
+                            <button 
+                                onclick="showEnrollAlert()" 
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors"
+                            >
+                                Enroll Now
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -194,5 +201,22 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        function showEnrollAlert() {
+            Swal.fire({
+                title: 'Inscription requise',
+                text: 'Vous devez d\'abord vous inscrire.',
+                icon: 'warning',
+                confirmButtonText: 'Se connecter',
+                showCancelButton: true,
+                cancelButtonText: 'Annuler'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'login.php';
+                }
+            });
+        }
+    </script>
 </body>
 </html>

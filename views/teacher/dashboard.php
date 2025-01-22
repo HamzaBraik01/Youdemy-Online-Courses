@@ -134,7 +134,7 @@ $statistiques = $Enseignant->consulterStatistiques();
                                         <td class="px-6 py-4">
                                             <div class="flex items-center">
                                                 <!-- Afficher l'image du cours -->
-                                                <img src="../../assets/images/<?php echo htmlspecialchars($cours['image']); ?>" alt="Course" class="w-10 h-10 rounded">
+                                                <img src="../../assets/uploads/<?php echo htmlspecialchars($cours['image']); ?>" alt="Course" class="w-10 h-10 rounded">
                                                 <div class="ml-4">
                                                     <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($cours['titre']); ?></div>
                                                 </div>
