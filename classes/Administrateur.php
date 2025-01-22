@@ -8,7 +8,6 @@ class Administrateur extends Utilisateur {
         parent::__construct($nom, $email, $motDePasse, $role, $status);
     }
     public function register(): void {
-        // Enregistrer l'utilisateur dans la base de données
         $this->save();
         echo "Admin {$this->nom} registered.\n";
     }
@@ -211,10 +210,8 @@ class Administrateur extends Utilisateur {
     public function listeCours(int $limit = 6, int $page = 1, ?int $category_id = null, ?string $search = null): array {
         $db = Database::getInstance()->getConnection();
 
-        // Calcul de l'offset pour la pagination
         $offset = ($page - 1) * $limit;
 
-        // Requête de base pour récupérer les cours
         $query = "
             SELECT 
                 Cours.id AS cours_id,
