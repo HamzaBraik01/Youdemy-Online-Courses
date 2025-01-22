@@ -208,6 +208,111 @@ class Administrateur extends Utilisateur {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
+    public function listeCours(int $limit = 6, int $page = 1, ?int $category_id = null, ?string $search = null): array {
+        $db = Database::getInstance()->getConnection();
+
+        // Calcul de l'offset pour la pagination
+        $offset = ($page - 1) * $limit;
+
+        // Requête de base pour récupérer les cours
+        $query = "
+            SELECT 
+                Cours.id AS cours_id,
+                Cours.titre AS cours_titre,
+                Cours.description AS cours_description,
+                Cours.image AS cours_image,
+                Cours.status AS cours_status,
+                Categorie.name AS categorie_name,
+                Utilisateur.nom AS enseignant_nom
+            FROM 
+                Cours
+            JOIN 
+                Categorie ON Cours.categorie_id = Categorie.id
+            JOIN 
+                Enseignant_Cours ON Cours.id = Enseignant_Cours.id_cours
+            JOIN 
+                Utilisateur ON Enseignant_Cours.id_enseignant = Utilisateur.id
+            WHERE 
+                Cours.status = 1
+        ";
+
+        // Ajout du filtre par catégorie si une catégorie est spécifiée
+        if ($category_id) {
+            $query .= " AND Cours.categorie_id = :category_id";
+        }
+
+        // Ajout de la recherche si un terme de recherche est spécifié
+        if ($search) {
+            $query .= " AND (Cours.titre LIKE :search OR Cours.description LIKE :search)";
+        }
+
+        // Ajout de la pagination
+        $query .= " LIMIT :limit OFFSET :offset";
+
+        // Préparation de la requête
+        $stmt = $db->prepare($query);
+
+        // Liaison des paramètres
+        if ($category_id) {
+            $stmt->bindParam(':category_id', $category_id, PDO::PARAM_INT);
+        }
+        if ($search) {
+            $searchTerm = "%$search%";
+            $stmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
+        }
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+
+        // Exécution de la requête
+        $stmt->execute();
+
+        // Récupération des résultats
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Méthode pour compter le nombre total de cours
+    public function countCours(?int $category_id = null, ?string $search = null): int {
+        $db = Database::getInstance()->getConnection();
+
+        // Requête de base pour compter les cours
+        $query = "
+            SELECT COUNT(*) as total 
+            FROM Cours
+            JOIN Categorie ON Cours.categorie_id = Categorie.id
+            JOIN Enseignant_Cours ON Cours.id = Enseignant_Cours.id_cours
+            JOIN Utilisateur ON Enseignant_Cours.id_enseignant = Utilisateur.id
+            WHERE Cours.status = 1
+        ";
+
+        // Ajout du filtre par catégorie si une catégorie est spécifiée
+        if ($category_id) {
+            $query .= " AND Cours.categorie_id = :category_id";
+        }
+
+        // Ajout de la recherche si un terme de recherche est spécifié
+        if ($search) {
+            $query .= " AND (Cours.titre LIKE :search OR Cours.description LIKE :search)";
+        }
+
+        // Préparation de la requête
+        $stmt = $db->prepare($query);
+
+        // Liaison des paramètres
+        if ($category_id) {
+            $stmt->bindParam(':category_id', $category_id, PDO::PARAM_INT);
+        }
+        if ($search) {
+            $searchTerm = "%$search%";
+            $stmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
+        }
+
+        // Exécution de la requête
+        $stmt->execute();
+
+        // Récupération du résultat
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int) $result['total'];
+    }
 
     
 }

@@ -1,3 +1,31 @@
+<?php
+    session_start();
+    require_once '../classes/Database.php';
+    require_once '../classes/Administrateur.php';
+
+    // Connexion à la base de données
+    $db = Database::getInstance();
+    $conn = $db->getConnection();
+
+    // Récupérer les catégories
+    $categories_query = "SELECT * FROM categorie";
+    $categories_stmt = $conn->query($categories_query);
+    $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Pagination et filtrage par catégorie
+    $limit = 6; // Nombre de cours par page
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $category_id = isset($_GET['category']) ? (int)$_GET['category'] : null;
+    $search = isset($_GET['search']) ? $_GET['search'] : null;
+
+    // Récupérer les cours pour la page actuelle
+    $administrateur = new Administrateur('Admin', 'admin@admin.com', 'password', new Role(1, 'Administrateur'));
+    $courses = $administrateur->listeCours($limit, $page, $category_id, $search);
+
+    // Récupérer le nombre total de cours pour la pagination
+    $total_courses = $administrateur->countCours($category_id, $search);
+    $total_pages = ceil($total_courses / $limit);
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -48,87 +76,68 @@
 
             <!-- Barre de recherche -->
             <div class="mb-6">
-                <div class="relative w-full max-w-md">
-                    <input
-                        type="text"
-                        placeholder="Search courses..."
-                        class="w-full px-4 py-2 rounded-full bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
-                    />
-                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-indigo-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
+                <form action="" method="GET">
+                    <div class="relative w-full max-w-md">
+                        <input
+                            type="text"
+                            name="search"
+                            placeholder="Search courses..."
+                            class="w-full px-4 py-2 rounded-full bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+                            value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>"
+                        />
+                        <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Boutons de filtrage -->
             <div class="flex flex-wrap gap-4">
-                <button class="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">All Courses</button>
-                <button class="px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Development</button>
-                <button class="px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Business</button>
-                <button class="px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Design</button>
-                <button class="px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Marketing</button>
+                <a href="?page=1" class="px-4 py-2 rounded-full <?php echo !$category_id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'; ?> hover:bg-indigo-700 transition-colors">All Courses</a>
+                <?php foreach ($categories as $category): ?>
+                    <a href="?page=1&category=<?php echo $category['id']; ?>" class="px-4 py-2 rounded-full <?php echo $category_id == $category['id'] ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'; ?> hover:bg-gray-300 transition-colors">
+                        <?php echo htmlspecialchars($category['name']); ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
         </div>
 
         <!-- Course Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Course Card 1 -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
-                <div class="p-6">
-                    <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Development</span>
-                    <h3 class="text-xl font-semibold mt-4 mb-2">Complete Web Development Bootcamp</h3>
-                    <p class="text-gray-600 mb-4">Learn web development from scratch with HTML, CSS, JavaScript, React, and Node.js</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl font-bold text-gray-900">$89.99</span>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
+            <?php foreach ($courses as $course): ?>
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                    <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
+                    <div class="p-6">
+                        <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"><?php echo htmlspecialchars($course['categorie_name']); ?></span>
+                        <h3 class="text-xl font-semibold mt-4 mb-2"><?php echo htmlspecialchars($course['cours_titre']); ?></h3>
+                        <p class="text-gray-600 mb-4"><?php echo htmlspecialchars($course['cours_description']); ?></p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-bold text-gray-900">$89.99</span>
+                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            <?php endforeach; ?>
+        </div>
 
-            <!-- Course Card 2 -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
-                <div class="p-6">
-                    <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Business</span>
-                    <h3 class="text-xl font-semibold mt-4 mb-2">Business Management Fundamentals</h3>
-                    <p class="text-gray-600 mb-4">Master the essentials of business management and leadership skills</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl font-bold text-gray-900">$69.99</span>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Course Card 3 -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
-                <div class="p-6">
-                    <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Design</span>
-                    <h3 class="text-xl font-semibold mt-4 mb-2">UI/UX Design Masterclass</h3>
-                    <p class="text-gray-600 mb-4">Create stunning user interfaces and improve user experience with modern design principles</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl font-bold text-gray-900">$79.99</span>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Course Card 4 -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img src="/api/placeholder/400/240" alt="Course thumbnail" class="w-full h-48 object-cover"/>
-                <div class="p-6">
-                    <span class="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Marketing</span>
-                    <h3 class="text-xl font-semibold mt-4 mb-2">Digital Marketing Strategy</h3>
-                    <p class="text-gray-600 mb-4">Learn to create and implement effective digital marketing campaigns</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl font-bold text-gray-900">$74.99</span>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors">Enroll Now</button>
-                    </div>
-                </div>
-            </div>
+        <!-- Pagination -->
+        <div class="flex justify-center mt-8">
+            <nav class="inline-flex rounded-md shadow-sm">
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?php echo $page - 1; ?><?php echo $category_id ? '&category=' . $category_id : ''; ?><?php echo $search ? '&search=' . $search : ''; ?>" class="px-4 py-2 bg-indigo-600 text-white rounded-l-md hover:bg-indigo-700 transition-colors">Previous</a>
+                <?php endif; ?>
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                    <a href="?page=<?php echo $i; ?><?php echo $category_id ? '&category=' . $category_id : ''; ?><?php echo $search ? '&search=' . $search : ''; ?>" class="px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 <?php echo $i == $page ? 'bg-indigo-100 text-indigo-700' : ''; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($page < $total_pages): ?>
+                    <a href="?page=<?php echo $page + 1; ?><?php echo $category_id ? '&category=' . $category_id : ''; ?><?php echo $search ? '&search=' . $search : ''; ?>" class="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 transition-colors">Next</a>
+                <?php endif; ?>
+            </nav>
         </div>
     </main>
 
