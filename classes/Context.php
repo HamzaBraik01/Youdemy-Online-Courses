@@ -44,7 +44,7 @@ class Context extends Course {
             ]);
     
             // Récupérer l'ID du cours inséré
-            $cours_id = $db->lastInsertId();
+            $cours_id = $db->lastInsertId();  
     
             // Insérer le contexte dans la table `contexte`
             $contexteQuery = "INSERT INTO contexte (objectif, cours_id) VALUES (:objectif, :cours_id)";

@@ -130,6 +130,91 @@ class Etudiant extends Utilisateur {
         return [];
     }
 
+    public function showCours(int $course_id): array {
+        $db = Database::getInstance()->getConnection();
+    
+        // Vérifier si l'étudiant est inscrit à ce cours
+        $etudiant_id = $_SESSION['user']['id'];
+        $is_enrolled_query = "
+            SELECT * FROM student_courses
+            WHERE id_etudiant = :etudiant_id AND id_cours = :course_id
+        ";
+        $is_enrolled_stmt = $db->prepare($is_enrolled_query);
+        $is_enrolled_stmt->bindParam(':etudiant_id', $etudiant_id, PDO::PARAM_INT);
+        $is_enrolled_stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+        $is_enrolled_stmt->execute();
+    
+        if (!$is_enrolled_stmt->fetch()) {
+            throw new Exception("Vous n'êtes pas inscrit à ce cours.");
+        }
+    
+        // Récupérer les détails du cours
+        $course_query = "
+            SELECT 
+                cours.id AS cours_id,
+                cours.titre AS cours_titre,
+                cours.description AS cours_description,
+                cours.contenu AS cours_contenu,
+                cours.type AS cours_type,
+                cours.image AS cours_image,
+                cours.status AS cours_status,
+                categorie.name AS categorie_name,
+                utilisateur.nom AS enseignant_nom
+            FROM 
+                cours
+            JOIN 
+                categorie ON cours.categorie_id = categorie.id
+            JOIN 
+                enseignant_cours ON cours.id = enseignant_cours.id_cours
+            JOIN 
+                utilisateur ON enseignant_cours.id_enseignant = utilisateur.id
+            WHERE 
+                cours.id = :course_id
+        ";
+        $course_stmt = $db->prepare($course_query);
+        $course_stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+        $course_stmt->execute();
+        $course = $course_stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$course) {
+            throw new Exception("Cours non trouvé.");
+        }
+    
+        // Récupérer le contenu supplémentaire en fonction du type de cours
+        if ($course['cours_type'] === 'CONTEXTE') {
+            // Récupérer l'objectif du cours depuis la table `contexte`
+            $contexte_query = "SELECT objectif FROM contexte WHERE cours_id = :course_id";
+            $contexte_stmt = $db->prepare($contexte_query);
+            $contexte_stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+            $contexte_stmt->execute();
+            $contexte = $contexte_stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($contexte) {
+                $course['contexte_objectif'] = $contexte['objectif'];
+            } else {
+                $course['contexte_objectif'] = "Aucun objectif défini.";
+            }
+        } elseif ($course['cours_type'] === 'VIDEO') {
+            // Récupérer l'URL de la vidéo depuis la table `video`
+            $video_query = "SELECT url FROM video WHERE cours_id = :course_id";
+            $video_stmt = $db->prepare($video_query);
+            $video_stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+            $video_stmt->execute();
+            $video = $video_stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($video) {
+                $course['video_url'] = $video['url'];
+            } else {
+                $course['video_url'] = "Aucune vidéo disponible.";
+            }
+        }
+    
+        // Retourner les détails du cours
+        return [
+            'course' => $course,
+        ];
+    }
+
     
 }
 ?>

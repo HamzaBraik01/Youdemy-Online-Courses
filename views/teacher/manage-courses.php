@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Ajouter le cours
-    try {
+    try { 
         $Enseignant->ajouterCours($title, $description, $content, $image, $type, $status, $categorie_id, $tags, $additionalData);
         $success_message = "Le cours a été ajouté avec succès.";
     } catch (Exception $e) {
