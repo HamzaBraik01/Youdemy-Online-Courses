@@ -8,8 +8,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'Etudiant') {
     header('Location: ../../public/login.php');
     exit();
 }
-
 $_SESSION['user']['role_id'] = 3;
+$Etudiant_id = $_SESSION['user']['id'];
 $Etudiant = new Etudiant(
     $_SESSION['user']['nom'],
     $_SESSION['user']['email'],
@@ -17,6 +17,25 @@ $Etudiant = new Etudiant(
     new Role(3, $_SESSION['user']['role']),
     $_SESSION['user']['status']
 );
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cours_id'])) {
+    $cours_id = (int)$_POST['cours_id'];
+
+    if (!$cours_id) {
+        $_SESSION['error'] = "ID du cours invalide.";
+        header('Location: dashboard.php');
+        exit();
+    }
+
+    try {
+        $Etudiant->sInscrireAuCours($Etudiant_id, $cours_id);
+        $_SESSION['message'] = "Vous êtes inscrit au cours avec succès.";
+    } catch (Exception $e) {
+        $_SESSION['error'] = "Erreur lors de l'inscription : " . $e->getMessage();
+    }
+
+    header('Location: dashboard.php');
+    exit();
+}
 
 // Connexion à la base de données
 $db = Database::getInstance();
@@ -31,20 +50,19 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
 $limit = 6; // Nombre de cours par page
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $category_id = isset($_GET['category']) ? (int)$_GET['category'] : null;
-$offset = ($page - 1) * $limit;
 
-// Requête de base pour les cours
-$query = "SELECT * FROM cours WHERE status = 1";
+// Récupérer les cours pour la page actuelle
+$courses = $Etudiant->listeCours($limit, $page, $category_id);
 
-// Ajouter le filtre par catégorie si une catégorie est sélectionnée
+// Récupérer le nombre total de cours pour la pagination
+$total_query = "
+    SELECT COUNT(*) as total 
+    FROM cours
+    JOIN enseignant_cours ON cours.id = enseignant_cours.id_cours
+    WHERE cours.status = 1
+";
 if ($category_id) {
-    $query .= " AND categorie_id = :category_id";
-}
-
-// Récupérer le nombre total de cours
-$total_query = "SELECT COUNT(*) as total FROM cours WHERE status = 1";
-if ($category_id) {
-    $total_query .= " AND categorie_id = :category_id";
+    $total_query .= " AND cours.categorie_id = :category_id";
 }
 $total_stmt = $conn->prepare($total_query);
 if ($category_id) {
@@ -54,17 +72,6 @@ $total_stmt->execute();
 $total_row = $total_stmt->fetch(PDO::FETCH_ASSOC);
 $total_courses = $total_row['total'];
 $total_pages = ceil($total_courses / $limit);
-
-// Récupérer les cours pour la page actuelle
-$query .= " LIMIT :limit OFFSET :offset";
-$stmt = $conn->prepare($query);
-if ($category_id) {
-    $stmt->bindParam(':category_id', $category_id, PDO::PARAM_INT);
-}
-$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -133,14 +140,6 @@ $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <i data-feather="book" class="mr-3"></i>
                     Mes Cours
                 </a>
-                <a href="Decouvrir.php" class="flex items-center px-6 py-3 text-blue-100 hover:bg-blue-700">
-                    <i data-feather="compass" class="mr-3"></i>
-                    Découvrir
-                </a>
-                <a href="Favoris.php" class="flex items-center px-6 py-3 text-blue-100 hover:bg-blue-700">
-                    <i data-feather="bookmark" class="mr-3"></i>
-                    Favoris
-                </a>
             </nav>
             <!-- Déconnexion -->
             <div class="p-5 border-t border-blue-500">
@@ -167,6 +166,19 @@ $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </header>
 
             <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <?php if (isset($_SESSION['message'])): ?>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <span class="block sm:inline"><?php echo $_SESSION['message']; ?></span>
+                    </div>
+                    <?php unset($_SESSION['message']); ?>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <span class="block sm:inline"><?php echo $_SESSION['error']; ?></span>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
                 <!-- Category Filters -->
                 <div class="flex items-center space-x-4 mb-8">
                     <!-- Bouton de défilement vers la gauche -->
@@ -206,20 +218,21 @@ $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php foreach ($courses as $course): ?>
                             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                                 <div class="relative pb-60">
-                                    <img src="../../assets/uploads/<?php echo $course['image']; ?>" alt="Course thumbnail" class="absolute h-full w-full object-cover">
+                                    <img src="../../assets/uploads/<?php echo $course['cours_image']; ?>" alt="Course thumbnail" class="absolute h-full w-full object-cover">
                                     <button class="absolute top-4 right-4 p-2 bg-white rounded-full shadow hover:bg-gray-100">
                                         <i data-feather="heart" class="w-4 h-4 text-gray-600"></i>
                                     </button>
                                 </div>
                                 <div class="p-4">
                                     <div class="flex items-center mb-2">
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"><?php echo $course['type']; ?></span>
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"><?php echo $course['cours_type']; ?></span>
                                     </div>
-                                    <h3 class="font-semibold text-lg mb-2"><?php echo $course['titre']; ?></h3>
-                                    <p class="text-gray-600 text-sm mb-4"><?php echo $course['description']; ?></p>
+                                    <h3 class="font-semibold text-lg mb-2"><?php echo $course['cours_titre']; ?></h3>
+                                    <p class="text-gray-600 text-sm mb-4"><?php echo $course['cours_description']; ?></p>
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center">
-                                            <span class="ml-2 text-sm text-gray-600">Instructeur</span>
+                                            <i data-feather="user" class="w-4 h-4 text-gray-600"></i>
+                                            <span class="ml-2 text-sm text-gray-600">Dr.<?php echo $course['enseignant_nom']; ?></span>
                                         </div>
                                         <div class="flex items-center text-yellow-400">
                                             <i data-feather="star" class="w-4 h-4 fill-current"></i>
@@ -229,11 +242,14 @@ $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="mt-4 pt-4 border-t">
                                         <div class="flex justify-between items-center">
                                             <div class="text-lg font-bold text-gray-900">
-                                                29.99 €
+                                                199.99 DH
                                             </div>
-                                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                                S'inscrire
-                                            </button>
+                                            <form action="" method="POST" class="inline">
+                                                <input type="hidden" name="cours_id" value="<?php echo $course['cours_id']; ?>">
+                                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                                    S'inscrire
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>

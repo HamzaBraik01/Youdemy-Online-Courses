@@ -267,12 +267,13 @@ class Enseignant extends Utilisateur {
         $enseignantId = $_SESSION['user']['id'];
     
         $query = "
-            SELECT u.nom, u.email 
+            SELECT u.nom, u.email, c.titre AS cours_titre 
             FROM utilisateur u
             JOIN student_courses sc ON u.id = sc.id_etudiant
-            JOIN enseignant_cours ec ON sc.id_cours = ec.id_cours
+            JOIN cours c ON sc.id_cours = c.id
+            JOIN enseignant_cours ec ON c.id = ec.id_cours
             WHERE ec.id_enseignant = :id_enseignant
-            GROUP BY u.id
+            GROUP BY u.id, c.titre
         ";
         $stmt = $db->prepare($query);
         $stmt->execute([':id_enseignant' => $enseignantId]);
