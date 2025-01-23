@@ -50,7 +50,7 @@
                 Join millions of learners worldwide in accessing high-quality courses from expert instructors. Start your learning journey today.
             </p>
             <div class="flex justify-center gap-4 pt-4">
-                <a href="/courses.html" class="bg-indigo-600 text-white px-8 py-4 rounded-full hover:bg-indigo-700 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                <a href="course.php" class="bg-indigo-600 text-white px-8 py-4 rounded-full hover:bg-indigo-700 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                 Explore Courses
                 </a>
                 <a href="/register.html" class="bg-white text-indigo-600 px-8 py-4 rounded-full border-2 border-indigo-600 hover:bg-indigo-50 transition-colors font-medium">

@@ -82,10 +82,6 @@ abstract class Utilisateur {
             'status' => $this->status
         ];
 
-        // Message de connexion réussie
-        //echo "User {$this->nom} connected.\n";
-
-        
         $this->redirigerUtilisateur();
     }
 
@@ -99,7 +95,6 @@ abstract class Utilisateur {
         session_destroy();
 
 
-        //echo "User {$this->nom} disconnected.\n";
     }
 
     abstract public function register(): void;
